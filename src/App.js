@@ -653,7 +653,7 @@ function ScreenAnalyse(props) {
       setSi(function(i) { return Math.min(i + 1, ASTATS.length - 1); });
     }, 2000);
 
-    fetch("/api/analyse", {
+    fetch("https://ulfrjsufztnnvrmltaph.supabase.co/functions/v1/smart-worker", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
