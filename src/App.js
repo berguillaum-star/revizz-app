@@ -1,9 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
- 
-var PINK = "#E87EC0";
-var VIOLET = "#9B8FD4";
-var PINK2 = "#C96EB0";
-var TEXT = "#111111";
 
 var SUPABASE_URL = "https://ulfrjsufztnvrmltaph.supabase.co";
 var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsZnJqc3VmenRubnZybWx0YXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTg0MjQsImV4cCI6MjA5Mjk5NDQyNH0.NSimA5LuypOtGZ1B4vC0TqZFyHX5aLl33L5Cd_kdoh0";
