@@ -527,7 +527,7 @@ function ScreenScan(props) {
         <div style={{fontSize:11,color:"rgba(255,255,255,.65)",fontWeight:600,marginTop:3,position:"relative",zIndex:1}}>{props.matiere} - {props.niveau}</div>
       </div>
       <div className="rz-body">
-        <input ref={inputRef} type="file" accept="image/*" multiple style={{display:"none"}}
+        <input ref={inputRef} type="file" accept="image/*,.pdf,.doc,.docx"" multiple style={{display:"none"}}
           onChange={function(e) { addFiles(e.target.files); e.target.value = ""; }} />
         <div onClick={function() { inputRef.current && inputRef.current.click(); }}
           style={{border:"2px dashed rgba(201,110,176,.3)",borderRadius:20,padding:"28px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:9,cursor:"pointer",background:n>0?"rgba(201,110,176,.03)":"#fafafa"}}>
