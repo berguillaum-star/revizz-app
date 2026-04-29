@@ -1025,11 +1025,9 @@ export default function RevizzApp() {
     ),
   };
 
-  return (
+   return (
     <div className="rz-wrap">
       {screens[step] || screens["home"]}
     </div>
-  );
-}
   );
 }
