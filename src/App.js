@@ -848,7 +848,7 @@ function ScreenAnalyse(props) {
     if (props.mode === "texte" && props.texte) {
       content = [{
         type: "text",
-        text: "Tu es un assistant pedagogique quebecois. Voici le contenu d'un cours (" + props.niveau + " - " + props.matiere + ") :\n\n" + props.texte.substring(0, 8000) + "\n\nGenere UNIQUEMENT un JSON valide sans backticks : {\"titre\":\"Titre\",\"resume\":\"Resume 2-3 phrases\",\"points_cles\":[\"Point 1\",\"Point 2\",\"Point 3\",\"Point 4\",\"Point 5\"],\"questions\":[{\"question\":\"Question ?\",\"options\":[\"Bonne\",\"Mauvaise A\",\"Mauvaise B\",\"Mauvaise C\"],\"reponse\":0,\"explication\":\"Explication courte\"}]} Genere exactement 5 questions. Niveau " + props.niveau + "."
+        text: "Tu es un assistant pedagogique quebecois expert. Voici le contenu d'un document de cours (" + props.niveau + " - " + props.matiere + ") :\n\n" + props.texte.substring(0, 8000) + "\n\nDetecte TOUTES les unites, chapitres ou sections (U1, U2, Chapitre 1, etc.). Pour CHAQUE unite, genere une fiche complete. Reponds UNIQUEMENT avec un JSON valide sans backticks : {\"titre_general\":\"Titre du document\",\"unites\":[{\"id\":\"u1\",\"titre\":\"Titre unite 1\",\"resume\":\"Resume detaille en 3-4 phrases\",\"points_cles\":[\"Point 1\",\"Point 2\",\"Point 3\",\"Point 4\",\"Point 5\"],\"questions\":[{\"question\":\"?\",\"options\":[\"Bonne\",\"Mauvaise A\",\"Mauvaise B\",\"Mauvaise C\"],\"reponse\":0,\"explication\":\"Explication\"}]}]} Genere exactement 30 questions par unite. Si pas de sections, une seule unite. Niveau " + props.niveau + "."
       }];
     } else {
       content = props.pages.map(function(p) {
@@ -879,13 +879,21 @@ function ScreenAnalyse(props) {
       }
       var clean = raw.replace(/[\u0060]{3}json|[\u0060]{3}/g, "").trim();
       var parsed = JSON.parse(clean);
-      if (!parsed.questions || parsed.questions.length === 0) throw new Error("bad");
-      props.onDone(parsed);
+      if (parsed.unites && parsed.unites.length > 0) {
+        props.onDone({
+          titre: parsed.titre_general,
+          unites: parsed.unites,
+          isMultiUnite: true
+        });
+      } else if (parsed.questions && parsed.questions.length > 0) {
+        props.onDone(parsed);
+      } else {
+        throw new Error("bad");
+      }
     }).catch(function() {
       clearInterval(iv);
       props.onError();
     });
-
     return function() { clearInterval(iv); };
   }, []);
 
@@ -920,6 +928,72 @@ function ScreenFiche(props) {
   var mat = getMat(props.matiere);
   var col = mat ? mat.c : PINK2;
   var c = props.contenu;
+  var [uniteIdx, setUniteIdx] = useState(0);
+
+  if (c.isMultiUnite && c.unites && c.unites.length > 0) {
+    var unite = c.unites[uniteIdx];
+    var isLast = uniteIdx === c.unites.length - 1;
+    return (
+      <div style={{flex:1,display:"flex",flexDirection:"column"}}>
+        <div className="rz-ghdr" style={{padding:"44px 18px 20px"}}>
+          <div className="rz-blob" style={{width:140,height:140,top:-40,right:-30}} />
+          <button className="rz-hback" onClick={props.onBack}>&lt; Retour</button>
+          <div style={{fontSize:9,color:"rgba(255,255,255,.65)",fontWeight:800,letterSpacing:".8px",marginBottom:4,position:"relative",zIndex:1}}>
+            {mat ? mat.e : ""} UNITE {uniteIdx + 1}/{c.unites.length}
+          </div>
+          <div style={{fontSize:18,fontWeight:900,color:"#fff",lineHeight:1.2,position:"relative",zIndex:1}}>{unite.titre}</div>
+        </div>
+        <div className="rz-body">
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4}}>
+            {c.unites.map(function(u, i) {
+              return (
+                <button key={i} onClick={function() { setUniteIdx(i); }}
+                  style={{padding:"6px 12px",border:"1.5px solid "+(i===uniteIdx?col:"#eee"),borderRadius:999,background:i===uniteIdx?col+"15":"#fff",fontSize:11,fontWeight:800,color:i===uniteIdx?col:"#aaa",cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit"}}>
+                  {u.id || ("U"+(i+1))}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{background:col+"10",border:"1.5px solid "+col+"25",borderRadius:16,padding:14}}>
+            <div style={{fontSize:9,fontWeight:800,color:col,letterSpacing:".7px",marginBottom:7}}>EN BREF</div>
+            <div style={{fontSize:12,fontWeight:600,color:"#444",lineHeight:1.7}}>{unite.resume}</div>
+          </div>
+          <div style={{fontSize:9,fontWeight:800,color:TEXTMUTED,letterSpacing:".7px"}}>POINTS CLES</div>
+          {(unite.points_cles || []).map(function(pt, i) {
+            return (
+              <div key={i} className="anim-up" style={{display:"flex",alignItems:"flex-start",gap:10,background:"#fff",border:"1.5px solid #eee",borderRadius:13,padding:12,animationDelay:(i*50+60)+"ms"}}>
+                <div style={{width:22,height:22,borderRadius:7,background:col+"15",color:col,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,flexShrink:0}}>{i+1}</div>
+                <div style={{fontSize:12,fontWeight:600,color:"#444",lineHeight:1.5,paddingTop:2}}>{pt}</div>
+              </div>
+            );
+          })}
+          <div style={{flex:1}} />
+          <div style={{display:"flex",gap:8}}>
+            <Btn onClick={function() {
+              var qs = unite.questions || [];
+              var shuffled = qs.slice().sort(function() { return Math.random() - 0.5; });
+              props.onStartQuiz(shuffled.slice(0, 10), unite.titre);
+            }} style={{flex:1}}>Quiz unite →</Btn>
+          </div>
+          {isLast && (
+            <button className="rz-btn-ghost" style={{marginTop:8}} onClick={function() {
+              var allQ = [];
+              c.unites.forEach(function(u) {
+                if (u.questions) {
+                  var shuffled = u.questions.slice().sort(function() { return Math.random() - 0.5; });
+                  allQ = allQ.concat(shuffled.slice(0, Math.ceil(40 / c.unites.length)));
+                }
+              });
+              props.onStartQuiz(allQ.slice(0, 40), "Grand Quiz - " + c.titre);
+            }}>
+              🏆 Grand Quiz final (40 questions)
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
       <div className="rz-ghdr" style={{padding:"44px 18px 20px"}}>
@@ -929,7 +1003,7 @@ function ScreenFiche(props) {
         <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.2,position:"relative",zIndex:1}}>{c.titre}</div>
       </div>
       <div className="rz-body">
-        <div className="anim-up" style={{background:col+"10",border:"1.5px solid "+col+"25",borderRadius:16,padding:14}}>
+        <div style={{background:col+"10",border:"1.5px solid "+col+"25",borderRadius:16,padding:14}}>
           <div style={{fontSize:9,fontWeight:800,color:col,letterSpacing:".7px",marginBottom:7}}>EN BREF</div>
           <div style={{fontSize:12,fontWeight:600,color:"#444",lineHeight:1.7}}>{c.resume}</div>
         </div>
@@ -954,12 +1028,10 @@ function ScreenFiche(props) {
 function ScreenQuiz(props) {
   var [idx, setIdx] = useState(0);
   var [score, setScore] = useState(0);
+  var [quizQuestions, setQuizQuestions] = useState([]);
+  var [quizTitre, setQuizTitre] = useState("");
   var [sel, setSel] = useState(-1);
-  var questions = props.contenu.questions || [];
-  var q = questions[idx];
-  var mat = getMat(props.matiere);
-  var col = mat ? mat.c : PINK2;
-  var tot = questions.length;
+  var questions = props.questions || (props.contenu && props.contenu.questions) || [];
 
   function handleSelect(i) {
     if (sel !== -1) return;
@@ -1239,12 +1311,16 @@ export default function RevizzApp() {
       <ScreenFiche
         matiere={cur.matiere} contenu={contenu}
         onBack={function() { setStep("scan"); }}
-        onStartQuiz={function() { setStep("quiz"); }}
+        onStartQuiz={function(qs, titre) {
+          setQuizQuestions(qs || (contenu.questions ? contenu.questions : []));
+          setQuizTitre(titre || contenu.titre || "");
+          setStep("quiz");
+        }}
       />
     ),
     quiz: contenu && (
       <ScreenQuiz
-        matiere={cur.matiere} contenu={contenu}
+        matiere={cur.matiere} contenu={contenu} questions={quizQuestions}
         onBack={function() { setStep("fiche"); }}
         onVictoire={handleVictoire}
       />
