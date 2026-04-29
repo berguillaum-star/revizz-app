@@ -55,6 +55,8 @@ function loadFiches(profilId) {
     .then(function(r) { return r.json(); })
     .catch(function() { return []; });
 }
+
+function saveSession(profilId, matiere, titre, score, total) {
   return sbFetch("sessions", {
     method: "POST",
     body: JSON.stringify({profil_id:profilId, matiere:matiere, titre:titre, score:score, total:total})
