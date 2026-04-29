@@ -632,10 +632,15 @@ function ScreenHome(props) {
 // ── SCAN ─────────────────────────────────────────────────────────
 function ScreenScan(props) {
   var [pages, setPages] = useState([]);
+  var [texte, setTexte] = useState("");
+  var [mode, setMode] = useState("image");
   var [err, setErr] = useState("");
+  var [loading, setLoading] = useState(false);
   var inputRef = useRef(null);
+  var pdfRef = useRef(null);
+  var docRef = useRef(null);
 
-  function addFiles(files) {
+  function addImages(files) {
     var toAdd = Array.prototype.slice.call(files, 0, 50 - pages.length);
     if (toAdd.length === 0) return;
     var results = [];
@@ -660,38 +665,138 @@ function ScreenScan(props) {
         done++;
         if (done === toAdd.length) {
           setPages(function(prev) { return prev.concat(results).slice(0, 50); });
+          setMode("image");
         }
       };
       img.src = url;
     });
   }
 
+  function addPDF(file) {
+    setLoading(true);
+    var script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js";
+    script.onload = function() {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var typedarray = new Uint8Array(e.target.result);
+        window.pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+          var textContent = [];
+          var pagePromises = [];
+          for (var i = 1; i <= pdf.numPages; i++) {
+            pagePromises.push(pdf.getPage(i).then(function(page) {
+              return page.getTextContent().then(function(content) {
+                return content.items.map(function(item) { return item.str; }).join(" ");
+              });
+            }));
+          }
+          Promise.all(pagePromises).then(function(pages) {
+            var fullText = pages.join("\n\n");
+            setTexte(fullText);
+            setMode("texte");
+            setLoading(false);
+          });
+        }).catch(function() {
+          setErr("Impossible de lire ce PDF. Essaie avec une image.");
+          setLoading(false);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    document.head.appendChild(script);
+  }
+
+  function addWord(file) {
+    setLoading(true);
+    var script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+    script.onload = function() {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        window.mammoth.extractRawText({arrayBuffer: e.target.result}).then(function(result) {
+          setTexte(result.value);
+          setMode("texte");
+          setLoading(false);
+        }).catch(function() {
+          setErr("Impossible de lire ce fichier Word. Essaie avec une image.");
+          setLoading(false);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    document.head.appendChild(script);
+  }
+
+  function handleFiles(files) {
+    setErr("");
+    var fileArr = Array.prototype.slice.call(files);
+    var images = fileArr.filter(function(f) { return f.type.indexOf("image") !== -1; });
+    var pdfs = fileArr.filter(function(f) { return f.type === "application/pdf"; });
+    var words = fileArr.filter(function(f) { return f.name.indexOf(".docx") !== -1 || f.name.indexOf(".doc") !== -1; });
+    if (images.length > 0) addImages(images);
+    else if (pdfs.length > 0) addPDF(pdfs[0]);
+    else if (words.length > 0) addWord(words[0]);
+  }
+
   var n = pages.length;
+  var hasContent = n > 0 || texte.length > 0;
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
       <div className="rz-ghdr" style={{padding:"44px 18px 20px"}}>
         <div className="rz-blob" style={{width:150,height:150,top:-40,right:-30}} />
         <button className="rz-hback" onClick={props.onBack}>&lt; Retour</button>
         <div style={{fontSize:9,color:"rgba(255,255,255,.65)",fontWeight:800,letterSpacing:".8px",marginBottom:4,position:"relative",zIndex:1}}>SCAN DU COURS</div>
-        <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.2,position:"relative",zIndex:1}}>Photographie tes cours, {props.prenom} !</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.2,position:"relative",zIndex:1}}>Ajoute tes cours, {props.prenom} !</div>
         <div style={{fontSize:11,color:"rgba(255,255,255,.65)",fontWeight:600,marginTop:3,position:"relative",zIndex:1}}>{props.matiere} - {props.niveau}</div>
       </div>
       <div className="rz-body">
         <input ref={inputRef} type="file" accept="image/*" multiple style={{display:"none"}}
-          onChange={function(e) { addFiles(e.target.files); e.target.value = ""; }} />
-        <div onClick={function() { inputRef.current && inputRef.current.click(); }}
-          style={{border:"2px dashed rgba(201,110,176,.3)",borderRadius:20,padding:"28px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:9,cursor:"pointer",background:n>0?"rgba(201,110,176,.03)":"#fafafa"}}>
-          <div style={{fontSize:36}}>{n > 0 ? "➕" : "📷"}</div>
-          <div style={{fontSize:13,fontWeight:800,color:TEXT,textAlign:"center"}}>
-            {n > 0 ? "Ajouter d'autres pages" : "Appuie pour ajouter tes photos"}
+          onChange={function(e) { handleFiles(e.target.files); e.target.value = ""; }} />
+        <input ref={pdfRef} type="file" accept=".pdf" style={{display:"none"}}
+          onChange={function(e) { handleFiles(e.target.files); e.target.value = ""; }} />
+        <input ref={docRef} type="file" accept=".doc,.docx" style={{display:"none"}}
+          onChange={function(e) { handleFiles(e.target.files); e.target.value = ""; }} />
+
+        <div style={{display:"flex",gap:8}}>
+          <div onClick={function() { inputRef.current && inputRef.current.click(); }}
+            style={{flex:1,border:"2px dashed rgba(201,110,176,.3)",borderRadius:16,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,cursor:"pointer",background:"rgba(201,110,176,.03)"}}>
+            <div style={{fontSize:28}}>📷</div>
+            <div style={{fontSize:11,fontWeight:800,color:TEXT,textAlign:"center"}}>Photos</div>
+            <div style={{fontSize:10,color:"#aaa",fontWeight:600,textAlign:"center"}}>JPG, PNG</div>
           </div>
-          <div style={{fontSize:11,color:"#aaa",fontWeight:600}}>
-            {n > 0 ? (n + "/50 pages") : "JPG, PNG - jusqu'a 50 pages"}
+          <div onClick={function() { pdfRef.current && pdfRef.current.click(); }}
+            style={{flex:1,border:"2px dashed rgba(155,143,212,.3)",borderRadius:16,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,cursor:"pointer",background:"rgba(155,143,212,.03)"}}>
+            <div style={{fontSize:28}}>📄</div>
+            <div style={{fontSize:11,fontWeight:800,color:TEXT,textAlign:"center"}}>PDF</div>
+            <div style={{fontSize:10,color:"#aaa",fontWeight:600,textAlign:"center"}}>.pdf</div>
+          </div>
+          <div onClick={function() { docRef.current && docRef.current.click(); }}
+            style={{flex:1,border:"2px dashed rgba(96,165,250,.3)",borderRadius:16,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:6,cursor:"pointer",background:"rgba(96,165,250,.03)"}}>
+            <div style={{fontSize:28}}>📝</div>
+            <div style={{fontSize:11,fontWeight:800,color:TEXT,textAlign:"center"}}>Word</div>
+            <div style={{fontSize:10,color:"#aaa",fontWeight:600,textAlign:"center"}}>.doc, .docx</div>
           </div>
         </div>
+
+        {loading && (
+          <div style={{textAlign:"center",padding:16,fontSize:13,fontWeight:700,color:TEXTSUB}}>
+            Extraction du texte en cours...
+          </div>
+        )}
+
+        {mode === "texte" && texte.length > 0 && (
+          <div style={{background:"rgba(155,143,212,.06)",border:"1.5px solid rgba(155,143,212,.2)",borderRadius:14,padding:14}}>
+            <div style={{fontSize:10,fontWeight:800,color:VIOLET,letterSpacing:".5px",marginBottom:6}}>TEXTE EXTRAIT</div>
+            <div style={{fontSize:12,fontWeight:600,color:"#444",lineHeight:1.6,maxHeight:120,overflow:"hidden"}}>{texte.substring(0,300)}...</div>
+            <div style={{fontSize:11,color:TEXTSUB,fontWeight:600,marginTop:8}}>{texte.length} caracteres extraits</div>
+          </div>
+        )}
+
         {n > 0 && (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <div style={{fontSize:9,fontWeight:800,color:TEXTMUTED,letterSpacing:".4px"}}>TES PAGES ({n})</div>
+            <div style={{fontSize:9,fontWeight:800,color:TEXTMUTED,letterSpacing:".4px"}}>TES PHOTOS ({n})</div>
             <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:3}}>
               {pages.map(function(p, i) {
                 return (
@@ -706,19 +811,24 @@ function ScreenScan(props) {
             </div>
           </div>
         )}
-        {n === 0 && (
+
+        {!hasContent && !loading && (
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            <div className="rz-tip"><span style={{fontSize:14}}>💡</span>Photos nettes et bien eclairees</div>
-            <div className="rz-tip"><span style={{fontSize:14}}>📄</span>1 page par photo</div>
-            <div className="rz-tip"><span style={{fontSize:14}}>🔢</span>Jusqu'a 50 pages</div>
+            <div className="rz-tip"><span style={{fontSize:14}}>💡</span>Photos : prends en photo tes notes de cours</div>
+            <div className="rz-tip"><span style={{fontSize:14}}>📄</span>PDF : uploade ton document PDF directement</div>
+            <div className="rz-tip"><span style={{fontSize:14}}>📝</span>Word : uploade ton fichier .docx</div>
           </div>
         )}
+
         {err !== "" && (
           <div style={{background:"#fff5f5",border:"1px solid #fca5a5",borderRadius:13,padding:11,fontSize:12,fontWeight:700,color:"#dc2626",textAlign:"center"}}>{err}</div>
         )}
         <div style={{flex:1}} />
-        <Btn disabled={n === 0} onClick={function() { setErr(""); props.onAnalyse(pages); }}>
-          Analyser {n} page{n > 1 ? "s" : ""} →
+        <Btn disabled={!hasContent || loading} onClick={function() {
+          setErr("");
+          props.onAnalyse(pages, texte, mode);
+        }}>
+          Analyser {mode === "texte" ? "le document" : (n + " page" + (n > 1 ? "s" : ""))} →
         </Btn>
       </div>
     </div>
@@ -734,6 +844,21 @@ function ScreenAnalyse(props) {
       setSi(function(i) { return Math.min(i + 1, ASTATS.length - 1); });
     }, 2000);
 
+    var content;
+    if (props.mode === "texte" && props.texte) {
+      content = [{
+        type: "text",
+        text: "Tu es un assistant pedagogique quebecois. Voici le contenu d'un cours (" + props.niveau + " - " + props.matiere + ") :\n\n" + props.texte.substring(0, 8000) + "\n\nGenere UNIQUEMENT un JSON valide sans backticks : {\"titre\":\"Titre\",\"resume\":\"Resume 2-3 phrases\",\"points_cles\":[\"Point 1\",\"Point 2\",\"Point 3\",\"Point 4\",\"Point 5\"],\"questions\":[{\"question\":\"Question ?\",\"options\":[\"Bonne\",\"Mauvaise A\",\"Mauvaise B\",\"Mauvaise C\"],\"reponse\":0,\"explication\":\"Explication courte\"}]} Genere exactement 5 questions. Niveau " + props.niveau + "."
+      }];
+    } else {
+      content = props.pages.map(function(p) {
+        return {type:"image", source:{type:"base64", media_type:"image/jpeg", data:p.d.split(",")[1]}};
+      }).concat([{
+        type: "text",
+        text: "Tu es un assistant pedagogique quebecois. Ces images sont des pages de cours (" + props.niveau + " - " + props.matiere + "). Genere UNIQUEMENT un JSON valide sans backticks : {\"titre\":\"Titre\",\"resume\":\"Resume 2-3 phrases\",\"points_cles\":[\"Point 1\",\"Point 2\",\"Point 3\",\"Point 4\",\"Point 5\"],\"questions\":[{\"question\":\"Question ?\",\"options\":[\"Bonne\",\"Mauvaise A\",\"Mauvaise B\",\"Mauvaise C\"],\"reponse\":0,\"explication\":\"Explication courte\"}]} Genere exactement 5 questions. Niveau " + props.niveau + "."
+      }]);
+    }
+
     fetch("https://ulfrjsufztnnvrmltaph.supabase.co/functions/v1/smart-worker", {
       method: "POST",
       headers: {
@@ -743,15 +868,7 @@ function ScreenAnalyse(props) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
-        messages: [{
-          role: "user",
-          content: props.pages.map(function(p) {
-            return {type:"image", source:{type:"base64", media_type:"image/jpeg", data:p.d.split(",")[1]}};
-          }).concat([{
-            type: "text",
-            text: "Tu es un assistant pedagogique quebecois. Ces images sont des pages de cours (" + props.niveau + " - " + props.matiere + "). Genere UNIQUEMENT un JSON valide sans backticks : {\"titre\":\"Titre\",\"resume\":\"Resume 2-3 phrases\",\"points_cles\":[\"Point 1\",\"Point 2\",\"Point 3\",\"Point 4\",\"Point 5\"],\"questions\":[{\"question\":\"Question ?\",\"options\":[\"Bonne\",\"Mauvaise A\",\"Mauvaise B\",\"Mauvaise C\"],\"reponse\":0,\"explication\":\"Explication courte\"}]} Genere exactement 5 questions. Niveau " + props.niveau + "."
-          }])
-        }]
+        messages: [{role: "user", content: content}]
       })
     }).then(function(res) { return res.json(); }).then(function(data) {
       clearInterval(iv);
@@ -789,7 +906,9 @@ function ScreenAnalyse(props) {
           <div className="rz-pbar" style={{width:"100%"}}>
             <div style={{height:"100%",borderRadius:999,background:"linear-gradient(90deg,#E87EC0,#9B8FD4)",transition:"width 2s ease",width:(((si+1)/ASTATS.length)*100)+"%"}} />
           </div>
-          <div style={{fontSize:10,color:TEXTMUTED,fontWeight:600,textAlign:"center",marginTop:6}}>{props.pages.length} page{props.pages.length > 1 ? "s" : ""} · {props.matiere}</div>
+          <div style={{fontSize:10,color:TEXTMUTED,fontWeight:600,textAlign:"center",marginTop:6}}>
+            {props.mode === "texte" ? "Document texte" : (props.pages.length + " page" + (props.pages.length > 1 ? "s" : ""))} · {props.matiere}
+          </div>
         </div>
       </div>
     </div>
@@ -964,6 +1083,8 @@ export default function RevizzApp() {
   var [step, setStep] = useState("splash");
   var [cur, setCur] = useState({prenom:"",niveau:"",matiere:"",id:null});
   var [pages, setPages] = useState([]);
+  var [texte, setTexte] = useState("");
+  var [mode, setMode] = useState("image");
   var [contenu, setContenu] = useState(null);
   var [score, setScore] = useState(0);
   var [selectedUnite, setSelectedUnite] = useState(null);
@@ -1088,11 +1209,7 @@ export default function RevizzApp() {
           setStep("fiche");
         }}
       />
-      setStep("fiche");
-        }}
-      />
-    ),
-    fichesPredef: (
+    ), (
       <ScreenFichesPredef
         onBack={function() { setStep("home"); }}
         onSelect={function(u) { setSelectedUnite(u); setContenu(u); setStep("fiche"); }}
@@ -1102,12 +1219,13 @@ export default function RevizzApp() {
       <ScreenScan
         prenom={cur.prenom} matiere={cur.matiere} niveau={cur.niveau}
         onBack={function() { setStep("home"); }}
-        onAnalyse={function(p) { setPages(p); setStep("analyse"); }}
+        onAnalyse={function(p, t, m) { setPages(p); setTexte(t); setMode(m); setStep("analyse"); }}
       />
     ),
     analyse: (
       <ScreenAnalyse
-        matiere={cur.matiere} niveau={cur.niveau} pages={pages}
+        matiere={cur.matiere} niveau={cur.niveau}
+        pages={pages} texte={texte} mode={mode}
         onDone={function(c) {
           setContenu(c);
           if (cur.id) saveFiche(cur.id, cur.matiere, c);
