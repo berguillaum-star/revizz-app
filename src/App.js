@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-var SUPABASE_URL = "https://ulfrjsufztnnvrmltaph.supabase.co";
+var SUPABASE_URL = "https://ulfrjsufztnvrmltaph.supabase.co";
 var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsZnJqc3VmenRubnZybWx0YXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTg0MjQsImV4cCI6MjA5Mjk5NDQyNH0.NSimA5LuypOtGZ1B4vC0TqZFyHX5aLl33L5Cd_kdoh0";
 
 function sbFetch(path, opts) {
@@ -554,36 +554,28 @@ function ScreenHome(props) {
 }
 
 // ── SCAN ─────────────────────────────────────────────────────────
-function addFiles(files) {
-  var toAdd = Array.prototype.slice.call(files, 0, 50 - pages.length);
-  if (toAdd.length === 0) return;
-  var results = [];
-  var done = 0;
-  toAdd.forEach(function(f) {
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    var img = new Image();
-    var url = URL.createObjectURL(f);
-    img.onload = function() {
-      var MAX = 800;
-      var w = img.width;
-      var h = img.height;
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-      var d = canvas.toDataURL("image/jpeg", 0.6);
-      URL.revokeObjectURL(url);
-      results.push({d: d, n: f.name});
-      done++;
-      if (done === toAdd.length) {
-        setPages(function(prev) { return prev.concat(results).slice(0, 50); });
-      }
-    };
-    img.src = url;
-  });
-}
+function ScreenScan(props) {
+  var [pages, setPages] = useState([]);
+  var [err, setErr] = useState("");
+  var inputRef = useRef(null);
+
+  function addFiles(files) {
+    var toAdd = Array.prototype.slice.call(files, 0, 50 - pages.length);
+    if (toAdd.length === 0) return;
+    var results = [];
+    var done = 0;
+    toAdd.forEach(function(f) {
+      var r = new FileReader();
+      r.onload = function(e) {
+        results.push({d: e.target.result, n: f.name});
+        done++;
+        if (done === toAdd.length) {
+          setPages(function(prev) { return prev.concat(results).slice(0, 50); });
+        }
+      };
+      r.readAsDataURL(f);
+    });
+  }
 
   var n = pages.length;
   return (
@@ -1037,5 +1029,7 @@ export default function RevizzApp() {
     <div className="rz-wrap">
       {screens[step] || screens["home"]}
     </div>
+  );
+}
   );
 }
