@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-var SUPABASE_URL = "ulfrjsufztnnvrmltaph.supabase.co";
+var SUPABASE_URL = "https://ulfrjsufztnnvrmltaph.supabase.co";
 var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsZnJqc3VmenRubnZybWx0YXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTg0MjQsImV4cCI6MjA5Mjk5NDQyNH0.NSimA5LuypOtGZ1B4vC0TqZFyHX5aLl33L5Cd_kdoh0";
 
 function sbFetch(path, opts) {
@@ -647,7 +647,10 @@ function ScreenAnalyse(props) {
 
     fetch("https://ulfrjsufztnnvrmltaph.supabase.co/functions/v1/smart-worker", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + SUPABASE_KEY
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
@@ -1025,7 +1028,7 @@ export default function RevizzApp() {
     ),
   };
 
-   return (
+  return (
     <div className="rz-wrap">
       {screens[step] || screens["home"]}
     </div>
