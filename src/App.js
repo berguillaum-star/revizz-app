@@ -645,7 +645,7 @@ function ScreenAnalyse(props) {
       setSi(function(i) { return Math.min(i + 1, ASTATS.length - 1); });
     }, 2000);
 
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("/api/analyse", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
