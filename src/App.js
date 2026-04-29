@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
  
 var PINK = "#E87EC0";
 var VIOLET = "#9B8FD4";
