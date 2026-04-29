@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
- 
+
 var SUPABASE_URL = "https://ulfrjsufztnnvrmltaph.supabase.co";
 var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsZnJqc3VmenRubnZybWx0YXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTg0MjQsImV4cCI6MjA5Mjk5NDQyNH0.NSimA5LuypOtGZ1B4vC0TqZFyHX5aLl33L5Cd_kdoh0";
- 
+
 function sbFetch(path, opts) {
   var url = SUPABASE_URL + "/rest/v1/" + path;
   var headers = Object.assign({
@@ -13,13 +13,13 @@ function sbFetch(path, opts) {
   }, opts.headers || {});
   return fetch(url, Object.assign({}, opts, {headers: headers}));
 }
- 
+
 function loadProfils() {
   return sbFetch("profils?order=created_at.asc", {method:"GET"})
     .then(function(r) { return r.json(); })
     .catch(function() { return []; });
 }
- 
+
 function createProfil(prenom, niveau, matiere) {
   return sbFetch("profils", {
     method: "POST",
@@ -28,21 +28,39 @@ function createProfil(prenom, niveau, matiere) {
     .then(function(rows) { return rows[0]; })
     .catch(function() { return null; });
 }
- 
+
 function updateProfil(id, matiere) {
   return sbFetch("profils?id=eq." + id, {
     method: "PATCH",
     body: JSON.stringify({matiere:matiere})
   }).catch(function() {});
 }
- 
-function saveSession(profilId, matiere, titre, score, total) {
+
+function saveFiche(profilId, matiere, contenu) {
+  return sbFetch("fiches", {
+    method: "POST",
+    body: JSON.stringify({
+      profil_id: profilId,
+      matiere: matiere,
+      titre: contenu.titre,
+      resume: contenu.resume,
+      points_cles: contenu.points_cles,
+      questions: contenu.questions
+    })
+  }).catch(function() {});
+}
+
+function loadFiches(profilId) {
+  return sbFetch("fiches?profil_id=eq." + profilId + "&order=created_at.desc", {method: "GET"})
+    .then(function(r) { return r.json(); })
+    .catch(function() { return []; });
+}
   return sbFetch("sessions", {
     method: "POST",
     body: JSON.stringify({profil_id:profilId, matiere:matiere, titre:titre, score:score, total:total})
   }).catch(function() {});
 }
- 
+
 var PINK = "#E87EC0";
 var VIOLET = "#9B8FD4";
 var PINK2 = "#C96EB0";
@@ -51,7 +69,7 @@ var TEXTSUB = "#888888";
 var TEXTMUTED = "#BBBBBB";
 var BORDER = "#EEEEEE";
 var SURFACE = "#FAFAFA";
- 
+
 var MATS = [
   { l: "Mathematiques",        e: "🔢", c: "#9B8FD4" },
   { l: "Francais",             e: "📝", c: "#C96EB0" },
@@ -65,19 +83,19 @@ var MATS = [
   { l: "Monde contemporain",   e: "🗺", c: "#818CF8" },
   { l: "Contenus autochtones", e: "🌿", c: "#86EFAC" },
 ];
- 
+
 var PRIM = ["Primaire 1","Primaire 2","Primaire 3","Primaire 4","Primaire 5","Primaire 6"];
 var SEC  = ["Secondaire 1","Secondaire 2","Secondaire 3","Secondaire 4","Secondaire 5"];
 var ASTATS = ["Lecture de tes notes...","Identification des concepts...","Redaction de la fiche...","Generation des questions...","Finalisation..."];
 var AVATARS = ["🌸","⭐","🦋","🌙","🌈","🦄"];
- 
+
 function getMat(l) {
   for (var i = 0; i < MATS.length; i++) {
     if (MATS[i].l === l) return MATS[i];
   }
   return null;
 }
- 
+
 var CSS = [
   "@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');",
   "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}",
@@ -129,7 +147,7 @@ var CSS = [
   ".anim-stpop{animation:rzStpop .5s cubic-bezier(.34,1.56,.64,1) .2s both}",
   ".anim-bnc{animation:rzBnc 2s ease-in-out infinite}",
 ].join("\n");
- 
+
 var _css = false;
 function injectCSS() {
   if (_css) return;
@@ -138,7 +156,7 @@ function injectCSS() {
   document.head.appendChild(s);
   _css = true;
 }
- 
+
 // ── Contenu Histoire Sec 3 - Chapitre 3 ──────────────────────────
 var CONTENU_HISTOIRE = [
   {id:"u1",titre:"U1 - Le regime militaire provisoire",resume:"Apres la capitulation de Montreal le 8 septembre 1760, les Britanniques controlent la Nouvelle-France jusqu'en 1763. C'est la periode du regime militaire, dirigee par Amherst, Murray, Burton et Gage.",points_cles:["8 septembre 1760 : capitulation de Montreal, fin de la resistance francaise","1760-1763 : periode du regime militaire britannique","Amherst = grand patron, Murray a Quebec, Burton a Trois-Rivieres, Gage a Montreal","Amherst confisque les armes et impose un serment d'allegeance","Nouveau principe : un accuse est innocent jusqu'a preuve du contraire","6000-7000 morts durant la guerre de la Conquete (10% de la population)"],questions:[{question:"Quand a eu lieu la capitulation de Montreal ?",options:["8 septembre 1760","13 septembre 1759","10 fevrier 1763","7 septembre 1760"],reponse:0,explication:"La capitulation de Montreal a eu lieu le 8 septembre 1760, forcant Levis et Vaudreuil a abandonner face aux 18 000 hommes anglais."},{question:"Qui etait le grand patron durant le regime militaire ?",options:["Jeffrey Amherst","James Murray","Guy Carleton","Burton"],reponse:0,explication:"Jeffrey Amherst etait le commandant en chef britannique. Murray etait a Quebec, Burton a Trois-Rivieres et Gage a Montreal."},{question:"Pourquoi Amherst confisque-t-il les armes ?",options:["Pour eviter une revolte","Pour les revendre","Pour equipier ses soldats","Pour punir les Canadiens"],reponse:0,explication:"Amherst confisque presque toutes les armes pour eviter une revolte de la population canadienne-francaise."},{question:"Quel nouveau principe juridique est introduit par les lois criminelles anglaises ?",options:["Un accuse est innocent jusqu'a preuve du contraire","Un accuse est coupable jusqu'a preuve du contraire","Tous les accuses sont emprisonnes","Les juges decidient seuls"],reponse:0,explication:"Le droit anglais introduit la presomption d'innocence : un accuse est innocent jusqu'a preuve du contraire."},{question:"Combien de morts estime-t-on durant la guerre de la Conquete ?",options:["6000-7000 morts (10% de la pop)","1000-2000 morts","15 000 morts","500 morts"],reponse:0,explication:"On estime entre 6000 et 7000 morts durant la guerre de la Conquete, soit environ 10% de la population."}]},
@@ -154,12 +172,68 @@ var CONTENU_HISTOIRE = [
   {id:"u11",titre:"U11 - Consequences du traite de Paris (1783)",resume:"Le traite de 1783 modifie l'Amerique du Nord. Les E-U obtiennent les territoires au sud des Grands Lacs. Des milliers de loyalistes fuient vers le Canada. La Compagnie du Nord-Ouest est creee.",points_cles:["Les E-U obtiennent les territoires au sud des Grands Lacs","Commerce des fourrures impacte : les voyageurs doivent aller plus au nord","Creation de la Compagnie du Nord-Ouest vs Compagnie de la Baie d'Hudson","30 000 loyalistes migrent vers la Nouvelle-Ecosse, 7 000 au Quebec","Les loyalistes s'installent en Gaspesie, Cantons-de-l'Est, ouest du St-Laurent","La GB aide les loyalistes : terres gratuites, nourriture, vetements"],questions:[{question:"Qui sont les loyalistes ?",options:["Des habitants des 13C restes fideles a la GB","Des soldats britanniques","Des Canadiens francais","Des Autochtones alliés des Britanniques"],reponse:0,explication:"Les loyalistes sont des habitants des 13 colonies qui sont restes fideles a la Grande-Bretagne contre la revolution americaine."},{question:"Combien de loyalistes migrent vers la Province de Quebec ?",options:["7 000","30 000","1 000","15 000"],reponse:0,explication:"7 000 loyalistes migrent vers la Province de Quebec. 30 000 autres vont vers la Nouvelle-Ecosse."},{question:"Quelle compagnie est creee pour le commerce des fourrures apres 1783 ?",options:["La Compagnie du Nord-Ouest","La Compagnie de la Baie d'Hudson","Les Montrealers Inc.","La Compagnie des Indes"],reponse:0,explication:"Les Montrealers s'unissent sous la banniere de la Compagnie du Nord-Ouest pour concurrencer la Compagnie de la Baie d'Hudson."},{question:"Pourquoi le commerce des fourrures est-il impacte par le traite de 1783 ?",options:["Le sud des Grands Lacs n'est plus accessible aux commercants de la Province","Les fourrures ne se vendent plus","Les Autochtones refusent de commercer","Les Britanniques interdisent le commerce"],reponse:0,explication:"Les E-U obtiennent les territoires au sud des Grands Lacs. Les commercants doivent se diriger vers le nord-ouest, ce qui coute tres cher."},{question:"Comment la GB aide-t-elle les loyalistes ?",options:["Terres gratuites, nourriture et vetements","Argent comptant","Postes gouvernementaux","Exemption de taxes permanente"],reponse:0,explication:"L'installation est penible pour les loyalistes, mais la GB les aide en fournissant des terres gratuites, de la nourriture et des vetements."}]},
   {id:"u12",titre:"U12 - Vers une 3e constitution",resume:"L'arrivee des loyalistes modifie la demographie (de 1% a 12% de Britanniques entre 1765 et 1790). Ils reclament des changements a l'Acte de Quebec. L'Acte constitutionnel de 1791 remplacera l'Acte de Quebec.",points_cles:["Les Britanniques passent de 1% (1765) a 12% (1790) de la population","Les loyalistes et le British Party exigent : lois anglaises, chambre d'assemblee, cantons","Certains loyalistes veulent separer la colonie en 2","Les seigneurs canadiens s'opposent a tout changement","Compromis : Habeas Corpus (1784), proces avec jury (1785), cantons","L'Acte constitutionnel de 1791 remplacera l'Acte de Quebec"],questions:[{question:"Quel pourcentage de Britanniques y a-t-il en 1790 ?",options:["12%","1%","50%","25%"],reponse:0,explication:"L'arrivee des loyalistes modifie la demographie : les habitants d'origine britannique passent de 1% en 1765 a 12% en 1790."},{question:"Que reclament les loyalistes et le British Party ?",options:["Lois civiles anglaises, chambre d'assemblee, cantons","Conservation de l'Acte de Quebec","Independance de la colonie","Retour au regime francais"],reponse:0,explication:"Les loyalistes rejoignent le British Party pour exiger le retour des lois civiles anglaises, une chambre d'assemblee et les cantons."},{question:"Quelle est la position des seigneurs canadiens-francais ?",options:["Ils s'opposent a tout changement car ils perdraient leurs privileges","Ils soutiennent tous les changements","Ils quittent la colonie","Ils s'allient au British Party"],reponse:0,explication:"Les seigneurs canadiens s'opposent a tout changement car cela leur ferait perdre leurs privileges (regime seigneurial, lois civiles francaises)."},{question:"Quelle constitution remplacera l'Acte de Quebec ?",options:["L'Acte constitutionnel de 1791","La Proclamation royale","Le Traite de Paris","L'Acte d'Union"],reponse:0,explication:"Le parlement britannique prepare l'Acte constitutionnel de 1791 pour remplacer l'Acte de Quebec de 1774."},{question:"Quelle reforme juridique est accordee en 1785 ?",options:["Les proces devant jury","La chambre d'assemblee","Le retour des lois francaises","L'Habeas Corpus"],reponse:0,explication:"En 1785, les proces devant jury sont accordes comme compromis. L'Habeas Corpus avait ete retabli en 1784."}]}
 ];
- 
+
 function isLily(prenom, niveau, matiere) {
   return matiere === "Histoire" && niveau.indexOf("Secondaire") !== -1;
 }
- 
-// ── Ecran Fiches predefinies ──────────────────────────────────────
+
+// ── Ecran Mes Fiches ─────────────────────────────────────────────
+function ScreenMesFiches(props) {
+  var [fiches, setFiches] = useState([]);
+  var [loading, setLoading] = useState(true);
+
+  useEffect(function() {
+    if (props.profilId) {
+      loadFiches(props.profilId).then(function(data) {
+        setFiches(data || []);
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  return (
+    <div style={{flex:1,display:"flex",flexDirection:"column"}}>
+      <div className="rz-ghdr" style={{padding:"44px 18px 20px"}}>
+        <div className="rz-blob" style={{width:150,height:150,top:-40,right:-30}} />
+        <button className="rz-hback" onClick={props.onBack}>&lt; Retour</button>
+        <div style={{fontSize:9,color:"rgba(255,255,255,.65)",fontWeight:800,letterSpacing:".8px",marginBottom:4,position:"relative",zIndex:1}}>MES FICHES</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#fff",lineHeight:1.2,position:"relative",zIndex:1}}>Mes resumes de cours</div>
+        <div style={{fontSize:11,color:"rgba(255,255,255,.65)",fontWeight:600,marginTop:3,position:"relative",zIndex:1}}>{props.prenom}</div>
+      </div>
+      <div className="rz-body">
+        {loading && (
+          <div style={{textAlign:"center",padding:20,color:TEXTSUB,fontSize:13,fontWeight:600}}>Chargement...</div>
+        )}
+        {!loading && fiches.length === 0 && (
+          <div style={{textAlign:"center",padding:"24px 20px",fontSize:13,color:"#bbb",fontWeight:600,background:"#fafafa",borderRadius:16,border:"1.5px dashed #eee"}}>
+            Aucune fiche pour l'instant - genere ta premiere revision !
+          </div>
+        )}
+        {!loading && fiches.map(function(f, i) {
+          var mat = getMat(f.matiere);
+          var col = mat ? mat.c : PINK2;
+          return (
+            <div key={f.id || i} onClick={function() { props.onSelect(f); }}
+              style={{display:"flex",alignItems:"center",gap:14,borderRadius:18,padding:"14px 16px",cursor:"pointer",border:"1.5px solid #eee",background:"#fff"}}>
+              <div style={{width:42,height:42,borderRadius:12,background:col+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>
+                {mat ? mat.e : "📋"}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:900,color:TEXT}}>{f.titre || "Fiche sans titre"}</div>
+                <div style={{fontSize:11,color:TEXTSUB,fontWeight:600,marginTop:2}}>{f.matiere} · {f.questions ? f.questions.length : 0} questions</div>
+              </div>
+              <div style={{fontSize:18,color:col}}>›</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function ScreenFichesPredef(props) {
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
@@ -189,7 +263,7 @@ function ScreenFichesPredef(props) {
     </div>
   );
 }
- 
+
 var STORAGE_KEY = "revizz_profils_v1";
 function loadProfilsLocal() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
@@ -198,7 +272,7 @@ function loadProfilsLocal() {
 function saveProfilsLocal(p) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch (e) {}
 }
- 
+
 // ── Logo SVG ─────────────────────────────────────────────────────
 function Logo(props) {
   var size = props.size || "md";
@@ -225,7 +299,7 @@ function Logo(props) {
     </svg>
   );
 }
- 
+
 // ── Btn ──────────────────────────────────────────────────────────
 function Btn(props) {
   return (
@@ -234,7 +308,7 @@ function Btn(props) {
     </button>
   );
 }
- 
+
 function ProgWrap(props) {
   return (
     <div className="rz-pw">
@@ -249,7 +323,7 @@ function ProgWrap(props) {
     </div>
   );
 }
- 
+
 // ── SPLASH ───────────────────────────────────────────────────────
 function ScreenSplash(props) {
   useEffect(function() {
@@ -271,7 +345,7 @@ function ScreenSplash(props) {
     </div>
   );
 }
- 
+
 // ── PROFILS ──────────────────────────────────────────────────────
 function ScreenProfils(props) {
   return (
@@ -318,7 +392,7 @@ function ScreenProfils(props) {
     </div>
   );
 }
- 
+
 // ── PRENOM ───────────────────────────────────────────────────────
 function ScreenPrenom(props) {
   var [val, setVal] = useState("");
@@ -344,7 +418,7 @@ function ScreenPrenom(props) {
     </div>
   );
 }
- 
+
 // ── NIVEAU ───────────────────────────────────────────────────────
 function ScreenNiveau(props) {
   var [sel, setSel] = useState("");
@@ -390,7 +464,7 @@ function ScreenNiveau(props) {
     </div>
   );
 }
- 
+
 // ── BIENVENUE ────────────────────────────────────────────────────
 function ScreenBienvenue(props) {
   var confetti = [];
@@ -440,7 +514,7 @@ function ScreenBienvenue(props) {
     </div>
   );
 }
- 
+
 // ── MATIERE ──────────────────────────────────────────────────────
 function ScreenMatiere(props) {
   var [sel, setSel] = useState("");
@@ -478,7 +552,7 @@ function ScreenMatiere(props) {
     </div>
   );
 }
- 
+
 // ── HOME ─────────────────────────────────────────────────────────
 function ScreenHome(props) {
   var mat = getMat(props.matiere);
@@ -533,17 +607,17 @@ function ScreenHome(props) {
           </div>
         )}
         {[
-          {ico:"📋",bg:"rgba(155,143,212,.1)",t:"Voir mes fiches",s:"Tes resumes de cours"},
-          {ico:"🏆",bg:"rgba(232,126,192,.08)",t:"Mon tableau de bord",s:"Progression et recompenses"},
+          {ico:"📋",bg:"rgba(155,143,212,.1)",t:"Voir mes fiches",s:"Tes resumes de cours", fn: props.onMesFiches},
+          {ico:"🏆",bg:"rgba(232,126,192,.08)",t:"Mon tableau de bord",s:"Progression et recompenses", fn: null},
         ].map(function(a) {
           return (
-            <div key={a.t} style={{display:"flex",alignItems:"center",gap:14,borderRadius:20,padding:16,border:"1.5px solid #eee",background:"#fff"}}>
+            <div key={a.t} onClick={a.fn || function(){}} style={{display:"flex",alignItems:"center",gap:14,borderRadius:20,padding:16,border:"1.5px solid #eee",background:"#fff",cursor:a.fn?"pointer":"default"}}>
               <div style={{width:50,height:50,borderRadius:14,background:a.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{a.ico}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:14,fontWeight:900,color:TEXT}}>{a.t}</div>
                 <div style={{fontSize:11,color:TEXTSUB,fontWeight:600,marginTop:2}}>{a.s}</div>
               </div>
-              <div style={{fontSize:18,color:"#ccc"}}>›</div>
+              <div style={{fontSize:18,color:a.fn?VIOLET:"#ccc"}}>›</div>
             </div>
           );
         })}
@@ -552,13 +626,13 @@ function ScreenHome(props) {
     </div>
   );
 }
- 
+
 // ── SCAN ─────────────────────────────────────────────────────────
 function ScreenScan(props) {
   var [pages, setPages] = useState([]);
   var [err, setErr] = useState("");
   var inputRef = useRef(null);
- 
+
   function addFiles(files) {
     var toAdd = Array.prototype.slice.call(files, 0, 50 - pages.length);
     if (toAdd.length === 0) return;
@@ -589,7 +663,7 @@ function ScreenScan(props) {
       img.src = url;
     });
   }
- 
+
   var n = pages.length;
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
@@ -648,16 +722,16 @@ function ScreenScan(props) {
     </div>
   );
 }
- 
+
 // ── ANALYSE ──────────────────────────────────────────────────────
 function ScreenAnalyse(props) {
   var [si, setSi] = useState(0);
- 
+
   useEffect(function() {
     var iv = setInterval(function() {
       setSi(function(i) { return Math.min(i + 1, ASTATS.length - 1); });
     }, 2000);
- 
+
     fetch("https://ulfrjsufztnnvrmltaph.supabase.co/functions/v1/smart-worker", {
       method: "POST",
       headers: {
@@ -692,10 +766,10 @@ function ScreenAnalyse(props) {
       clearInterval(iv);
       props.onError();
     });
- 
+
     return function() { clearInterval(iv); };
   }, []);
- 
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#fafafa"}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24,padding:"36px 24px"}}>
@@ -719,7 +793,7 @@ function ScreenAnalyse(props) {
     </div>
   );
 }
- 
+
 // ── FICHE ────────────────────────────────────────────────────────
 function ScreenFiche(props) {
   var mat = getMat(props.matiere);
@@ -754,7 +828,7 @@ function ScreenFiche(props) {
     </div>
   );
 }
- 
+
 // ── QUIZ ─────────────────────────────────────────────────────────
 function ScreenQuiz(props) {
   var [idx, setIdx] = useState(0);
@@ -765,14 +839,14 @@ function ScreenQuiz(props) {
   var mat = getMat(props.matiere);
   var col = mat ? mat.c : PINK2;
   var tot = questions.length;
- 
+
   function handleSelect(i) {
     if (sel !== -1) return;
     var ok = i === q.reponse;
     setSel(i);
     if (ok) setScore(function(s) { return s + 1; });
   }
- 
+
   function handleNext() {
     var finalScore = sel === q.reponse ? score : score;
     if (idx === tot - 1) {
@@ -782,7 +856,7 @@ function ScreenQuiz(props) {
       setSel(-1);
     }
   }
- 
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
       <div className="rz-pw">
@@ -831,7 +905,7 @@ function ScreenQuiz(props) {
     </div>
   );
 }
- 
+
 // ── VICTOIRE ─────────────────────────────────────────────────────
 function ScreenVictoire(props) {
   var tot = props.total || 5;
@@ -878,11 +952,11 @@ function ScreenVictoire(props) {
     </div>
   );
 }
- 
+
 // ── APP ──────────────────────────────────────────────────────────
 export default function RevizzApp() {
   useEffect(function() { injectCSS(); }, []);
- 
+
   var [profils, setProfils] = useState([]);
   var [loading, setLoading] = useState(true);
   var [step, setStep] = useState("splash");
@@ -892,7 +966,7 @@ export default function RevizzApp() {
   var [score, setScore] = useState(0);
   var [selectedUnite, setSelectedUnite] = useState(null);
   var editingNew = useRef(false);
- 
+
   // Charger les profils depuis Supabase au démarrage
   useEffect(function() {
     loadProfils().then(function(data) {
@@ -900,29 +974,29 @@ export default function RevizzApp() {
       setLoading(false);
     });
   }, []);
- 
+
   function handleSelect(i) {
     var p = profils[i];
     setCur({prenom:p.prenom, niveau:p.niveau, matiere:p.matiere, id:p.id});
     setStep("home");
   }
- 
+
   function handleAdd() {
     editingNew.current = true;
     setCur({prenom:"", niveau:"", matiere:"", id:null});
     setStep("prenom");
   }
- 
+
   function handlePrenom(p) {
     setCur(function(c) { return {prenom:p, niveau:c.niveau, matiere:c.matiere, id:c.id}; });
     setStep("niveau");
   }
- 
+
   function handleNiveau(n) {
     setCur(function(c) { return {prenom:c.prenom, niveau:n, matiere:c.matiere, id:c.id}; });
     setStep("bienvenue");
   }
- 
+
   function handleMatiere(m) {
     if (editingNew.current) {
       createProfil(cur.prenom, cur.niveau, m).then(function(newP) {
@@ -945,7 +1019,7 @@ export default function RevizzApp() {
       setStep("home");
     }
   }
- 
+
   function handleVictoire(s) {
     setScore(s);
     if (cur.id && contenu) {
@@ -953,7 +1027,7 @@ export default function RevizzApp() {
     }
     setStep("victoire");
   }
- 
+
   if (loading) {
     return (
       <div className="rz-wrap" style={{alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#1c2260,#0f1438)"}}>
@@ -967,7 +1041,7 @@ export default function RevizzApp() {
       </div>
     );
   }
- 
+
   var screens = {
     splash: (
       <ScreenSplash onDone={function() { setStep("profils"); }} />
@@ -994,9 +1068,25 @@ export default function RevizzApp() {
         onChangeProfil={function() { setStep("profils"); }}
         onChangeMatiere={function() { editingNew.current = false; setStep("matiere"); }}
         onFichesPredef={function() { setStep("fichesPredef"); }}
+        onMesFiches={function() { setStep("mesFiches"); }}
       />
     ),
-    fichesPredef: (
+    mesFiches: (
+      <ScreenMesFiches
+        prenom={cur.prenom}
+        profilId={cur.id}
+        onBack={function() { setStep("home"); }}
+        onSelect={function(f) {
+          setContenu({
+            titre: f.titre,
+            resume: f.resume,
+            points_cles: f.points_cles,
+            questions: f.questions
+          });
+          setStep("fiche");
+        }}
+      />
+    ), (
       <ScreenFichesPredef
         onBack={function() { setStep("home"); }}
         onSelect={function(u) { setSelectedUnite(u); setContenu(u); setStep("fiche"); }}
@@ -1012,7 +1102,11 @@ export default function RevizzApp() {
     analyse: (
       <ScreenAnalyse
         matiere={cur.matiere} niveau={cur.niveau} pages={pages}
-        onDone={function(c) { setContenu(c); setStep("fiche"); }}
+        onDone={function(c) {
+          setContenu(c);
+          if (cur.id) saveFiche(cur.id, cur.matiere, c);
+          setStep("fiche");
+        }}
         onError={function() { setStep("scan"); }}
       />
     ),
@@ -1040,7 +1134,7 @@ export default function RevizzApp() {
       />
     ),
   };
- 
+
   return (
     <div className="rz-wrap">
       {screens[step] || screens["home"]}
