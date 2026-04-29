@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-
+ 
 var SUPABASE_URL = "https://ulfrjsufztnnvrmltaph.supabase.co";
 var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsZnJqc3VmenRubnZybWx0YXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTg0MjQsImV4cCI6MjA5Mjk5NDQyNH0.NSimA5LuypOtGZ1B4vC0TqZFyHX5aLl33L5Cd_kdoh0";
-
+ 
 function sbFetch(path, opts) {
   var url = SUPABASE_URL + "/rest/v1/" + path;
   var headers = Object.assign({
@@ -13,13 +13,13 @@ function sbFetch(path, opts) {
   }, opts.headers || {});
   return fetch(url, Object.assign({}, opts, {headers: headers}));
 }
-
+ 
 function loadProfils() {
   return sbFetch("profils?order=created_at.asc", {method:"GET"})
     .then(function(r) { return r.json(); })
     .catch(function() { return []; });
 }
-
+ 
 function createProfil(prenom, niveau, matiere) {
   return sbFetch("profils", {
     method: "POST",
@@ -28,21 +28,21 @@ function createProfil(prenom, niveau, matiere) {
     .then(function(rows) { return rows[0]; })
     .catch(function() { return null; });
 }
-
+ 
 function updateProfil(id, matiere) {
   return sbFetch("profils?id=eq." + id, {
     method: "PATCH",
     body: JSON.stringify({matiere:matiere})
   }).catch(function() {});
 }
-
+ 
 function saveSession(profilId, matiere, titre, score, total) {
   return sbFetch("sessions", {
     method: "POST",
     body: JSON.stringify({profil_id:profilId, matiere:matiere, titre:titre, score:score, total:total})
   }).catch(function() {});
 }
-
+ 
 var PINK = "#E87EC0";
 var VIOLET = "#9B8FD4";
 var PINK2 = "#C96EB0";
@@ -51,7 +51,7 @@ var TEXTSUB = "#888888";
 var TEXTMUTED = "#BBBBBB";
 var BORDER = "#EEEEEE";
 var SURFACE = "#FAFAFA";
-
+ 
 var MATS = [
   { l: "Mathematiques",        e: "🔢", c: "#9B8FD4" },
   { l: "Francais",             e: "📝", c: "#C96EB0" },
@@ -65,19 +65,19 @@ var MATS = [
   { l: "Monde contemporain",   e: "🗺", c: "#818CF8" },
   { l: "Contenus autochtones", e: "🌿", c: "#86EFAC" },
 ];
-
+ 
 var PRIM = ["Primaire 1","Primaire 2","Primaire 3","Primaire 4","Primaire 5","Primaire 6"];
 var SEC  = ["Secondaire 1","Secondaire 2","Secondaire 3","Secondaire 4","Secondaire 5"];
 var ASTATS = ["Lecture de tes notes...","Identification des concepts...","Redaction de la fiche...","Generation des questions...","Finalisation..."];
 var AVATARS = ["🌸","⭐","🦋","🌙","🌈","🦄"];
-
+ 
 function getMat(l) {
   for (var i = 0; i < MATS.length; i++) {
     if (MATS[i].l === l) return MATS[i];
   }
   return null;
 }
-
+ 
 var CSS = [
   "@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');",
   "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}",
@@ -129,7 +129,7 @@ var CSS = [
   ".anim-stpop{animation:rzStpop .5s cubic-bezier(.34,1.56,.64,1) .2s both}",
   ".anim-bnc{animation:rzBnc 2s ease-in-out infinite}",
 ].join("\n");
-
+ 
 var _css = false;
 function injectCSS() {
   if (_css) return;
@@ -138,7 +138,7 @@ function injectCSS() {
   document.head.appendChild(s);
   _css = true;
 }
-
+ 
 // ── Contenu Histoire Sec 3 - Chapitre 3 ──────────────────────────
 var CONTENU_HISTOIRE = [
   {id:"u1",titre:"U1 - Le regime militaire provisoire",resume:"Apres la capitulation de Montreal le 8 septembre 1760, les Britanniques controlent la Nouvelle-France jusqu'en 1763. C'est la periode du regime militaire, dirigee par Amherst, Murray, Burton et Gage.",points_cles:["8 septembre 1760 : capitulation de Montreal, fin de la resistance francaise","1760-1763 : periode du regime militaire britannique","Amherst = grand patron, Murray a Quebec, Burton a Trois-Rivieres, Gage a Montreal","Amherst confisque les armes et impose un serment d'allegeance","Nouveau principe : un accuse est innocent jusqu'a preuve du contraire","6000-7000 morts durant la guerre de la Conquete (10% de la population)"],questions:[{question:"Quand a eu lieu la capitulation de Montreal ?",options:["8 septembre 1760","13 septembre 1759","10 fevrier 1763","7 septembre 1760"],reponse:0,explication:"La capitulation de Montreal a eu lieu le 8 septembre 1760, forcant Levis et Vaudreuil a abandonner face aux 18 000 hommes anglais."},{question:"Qui etait le grand patron durant le regime militaire ?",options:["Jeffrey Amherst","James Murray","Guy Carleton","Burton"],reponse:0,explication:"Jeffrey Amherst etait le commandant en chef britannique. Murray etait a Quebec, Burton a Trois-Rivieres et Gage a Montreal."},{question:"Pourquoi Amherst confisque-t-il les armes ?",options:["Pour eviter une revolte","Pour les revendre","Pour equipier ses soldats","Pour punir les Canadiens"],reponse:0,explication:"Amherst confisque presque toutes les armes pour eviter une revolte de la population canadienne-francaise."},{question:"Quel nouveau principe juridique est introduit par les lois criminelles anglaises ?",options:["Un accuse est innocent jusqu'a preuve du contraire","Un accuse est coupable jusqu'a preuve du contraire","Tous les accuses sont emprisonnes","Les juges decidient seuls"],reponse:0,explication:"Le droit anglais introduit la presomption d'innocence : un accuse est innocent jusqu'a preuve du contraire."},{question:"Combien de morts estime-t-on durant la guerre de la Conquete ?",options:["6000-7000 morts (10% de la pop)","1000-2000 morts","15 000 morts","500 morts"],reponse:0,explication:"On estime entre 6000 et 7000 morts durant la guerre de la Conquete, soit environ 10% de la population."}]},
@@ -154,11 +154,11 @@ var CONTENU_HISTOIRE = [
   {id:"u11",titre:"U11 - Consequences du traite de Paris (1783)",resume:"Le traite de 1783 modifie l'Amerique du Nord. Les E-U obtiennent les territoires au sud des Grands Lacs. Des milliers de loyalistes fuient vers le Canada. La Compagnie du Nord-Ouest est creee.",points_cles:["Les E-U obtiennent les territoires au sud des Grands Lacs","Commerce des fourrures impacte : les voyageurs doivent aller plus au nord","Creation de la Compagnie du Nord-Ouest vs Compagnie de la Baie d'Hudson","30 000 loyalistes migrent vers la Nouvelle-Ecosse, 7 000 au Quebec","Les loyalistes s'installent en Gaspesie, Cantons-de-l'Est, ouest du St-Laurent","La GB aide les loyalistes : terres gratuites, nourriture, vetements"],questions:[{question:"Qui sont les loyalistes ?",options:["Des habitants des 13C restes fideles a la GB","Des soldats britanniques","Des Canadiens francais","Des Autochtones alliés des Britanniques"],reponse:0,explication:"Les loyalistes sont des habitants des 13 colonies qui sont restes fideles a la Grande-Bretagne contre la revolution americaine."},{question:"Combien de loyalistes migrent vers la Province de Quebec ?",options:["7 000","30 000","1 000","15 000"],reponse:0,explication:"7 000 loyalistes migrent vers la Province de Quebec. 30 000 autres vont vers la Nouvelle-Ecosse."},{question:"Quelle compagnie est creee pour le commerce des fourrures apres 1783 ?",options:["La Compagnie du Nord-Ouest","La Compagnie de la Baie d'Hudson","Les Montrealers Inc.","La Compagnie des Indes"],reponse:0,explication:"Les Montrealers s'unissent sous la banniere de la Compagnie du Nord-Ouest pour concurrencer la Compagnie de la Baie d'Hudson."},{question:"Pourquoi le commerce des fourrures est-il impacte par le traite de 1783 ?",options:["Le sud des Grands Lacs n'est plus accessible aux commercants de la Province","Les fourrures ne se vendent plus","Les Autochtones refusent de commercer","Les Britanniques interdisent le commerce"],reponse:0,explication:"Les E-U obtiennent les territoires au sud des Grands Lacs. Les commercants doivent se diriger vers le nord-ouest, ce qui coute tres cher."},{question:"Comment la GB aide-t-elle les loyalistes ?",options:["Terres gratuites, nourriture et vetements","Argent comptant","Postes gouvernementaux","Exemption de taxes permanente"],reponse:0,explication:"L'installation est penible pour les loyalistes, mais la GB les aide en fournissant des terres gratuites, de la nourriture et des vetements."}]},
   {id:"u12",titre:"U12 - Vers une 3e constitution",resume:"L'arrivee des loyalistes modifie la demographie (de 1% a 12% de Britanniques entre 1765 et 1790). Ils reclament des changements a l'Acte de Quebec. L'Acte constitutionnel de 1791 remplacera l'Acte de Quebec.",points_cles:["Les Britanniques passent de 1% (1765) a 12% (1790) de la population","Les loyalistes et le British Party exigent : lois anglaises, chambre d'assemblee, cantons","Certains loyalistes veulent separer la colonie en 2","Les seigneurs canadiens s'opposent a tout changement","Compromis : Habeas Corpus (1784), proces avec jury (1785), cantons","L'Acte constitutionnel de 1791 remplacera l'Acte de Quebec"],questions:[{question:"Quel pourcentage de Britanniques y a-t-il en 1790 ?",options:["12%","1%","50%","25%"],reponse:0,explication:"L'arrivee des loyalistes modifie la demographie : les habitants d'origine britannique passent de 1% en 1765 a 12% en 1790."},{question:"Que reclament les loyalistes et le British Party ?",options:["Lois civiles anglaises, chambre d'assemblee, cantons","Conservation de l'Acte de Quebec","Independance de la colonie","Retour au regime francais"],reponse:0,explication:"Les loyalistes rejoignent le British Party pour exiger le retour des lois civiles anglaises, une chambre d'assemblee et les cantons."},{question:"Quelle est la position des seigneurs canadiens-francais ?",options:["Ils s'opposent a tout changement car ils perdraient leurs privileges","Ils soutiennent tous les changements","Ils quittent la colonie","Ils s'allient au British Party"],reponse:0,explication:"Les seigneurs canadiens s'opposent a tout changement car cela leur ferait perdre leurs privileges (regime seigneurial, lois civiles francaises)."},{question:"Quelle constitution remplacera l'Acte de Quebec ?",options:["L'Acte constitutionnel de 1791","La Proclamation royale","Le Traite de Paris","L'Acte d'Union"],reponse:0,explication:"Le parlement britannique prepare l'Acte constitutionnel de 1791 pour remplacer l'Acte de Quebec de 1774."},{question:"Quelle reforme juridique est accordee en 1785 ?",options:["Les proces devant jury","La chambre d'assemblee","Le retour des lois francaises","L'Habeas Corpus"],reponse:0,explication:"En 1785, les proces devant jury sont accordes comme compromis. L'Habeas Corpus avait ete retabli en 1784."}]}
 ];
-
+ 
 function isLily(prenom, niveau, matiere) {
   return matiere === "Histoire" && niveau.indexOf("Secondaire") !== -1;
 }
-
+ 
 // ── Ecran Fiches predefinies ──────────────────────────────────────
 function ScreenFichesPredef(props) {
   return (
@@ -189,7 +189,7 @@ function ScreenFichesPredef(props) {
     </div>
   );
 }
-
+ 
 var STORAGE_KEY = "revizz_profils_v1";
 function loadProfilsLocal() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
@@ -198,7 +198,7 @@ function loadProfilsLocal() {
 function saveProfilsLocal(p) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch (e) {}
 }
-
+ 
 // ── Logo SVG ─────────────────────────────────────────────────────
 function Logo(props) {
   var size = props.size || "md";
@@ -225,7 +225,7 @@ function Logo(props) {
     </svg>
   );
 }
-
+ 
 // ── Btn ──────────────────────────────────────────────────────────
 function Btn(props) {
   return (
@@ -234,7 +234,7 @@ function Btn(props) {
     </button>
   );
 }
-
+ 
 function ProgWrap(props) {
   return (
     <div className="rz-pw">
@@ -249,7 +249,7 @@ function ProgWrap(props) {
     </div>
   );
 }
-
+ 
 // ── SPLASH ───────────────────────────────────────────────────────
 function ScreenSplash(props) {
   useEffect(function() {
@@ -271,7 +271,7 @@ function ScreenSplash(props) {
     </div>
   );
 }
-
+ 
 // ── PROFILS ──────────────────────────────────────────────────────
 function ScreenProfils(props) {
   return (
@@ -318,7 +318,7 @@ function ScreenProfils(props) {
     </div>
   );
 }
-
+ 
 // ── PRENOM ───────────────────────────────────────────────────────
 function ScreenPrenom(props) {
   var [val, setVal] = useState("");
@@ -344,7 +344,7 @@ function ScreenPrenom(props) {
     </div>
   );
 }
-
+ 
 // ── NIVEAU ───────────────────────────────────────────────────────
 function ScreenNiveau(props) {
   var [sel, setSel] = useState("");
@@ -390,7 +390,7 @@ function ScreenNiveau(props) {
     </div>
   );
 }
-
+ 
 // ── BIENVENUE ────────────────────────────────────────────────────
 function ScreenBienvenue(props) {
   var confetti = [];
@@ -440,7 +440,7 @@ function ScreenBienvenue(props) {
     </div>
   );
 }
-
+ 
 // ── MATIERE ──────────────────────────────────────────────────────
 function ScreenMatiere(props) {
   var [sel, setSel] = useState("");
@@ -478,7 +478,7 @@ function ScreenMatiere(props) {
     </div>
   );
 }
-
+ 
 // ── HOME ─────────────────────────────────────────────────────────
 function ScreenHome(props) {
   var mat = getMat(props.matiere);
@@ -552,31 +552,44 @@ function ScreenHome(props) {
     </div>
   );
 }
-
+ 
 // ── SCAN ─────────────────────────────────────────────────────────
 function ScreenScan(props) {
   var [pages, setPages] = useState([]);
   var [err, setErr] = useState("");
   var inputRef = useRef(null);
-
+ 
   function addFiles(files) {
     var toAdd = Array.prototype.slice.call(files, 0, 50 - pages.length);
     if (toAdd.length === 0) return;
     var results = [];
     var done = 0;
     toAdd.forEach(function(f) {
-      var r = new FileReader();
-      r.onload = function(e) {
-        results.push({d: e.target.result, n: f.name});
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      var img = new Image();
+      var url = URL.createObjectURL(f);
+      img.onload = function() {
+        var MAX = 400;
+        var w = img.width;
+        var h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        var d = canvas.toDataURL("image/jpeg", 0.3);
+        URL.revokeObjectURL(url);
+        results.push({d: d, n: f.name});
         done++;
         if (done === toAdd.length) {
           setPages(function(prev) { return prev.concat(results).slice(0, 50); });
         }
       };
-      r.readAsDataURL(f);
+      img.src = url;
     });
   }
-
+ 
   var n = pages.length;
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
@@ -635,16 +648,16 @@ function ScreenScan(props) {
     </div>
   );
 }
-
+ 
 // ── ANALYSE ──────────────────────────────────────────────────────
 function ScreenAnalyse(props) {
   var [si, setSi] = useState(0);
-
+ 
   useEffect(function() {
     var iv = setInterval(function() {
       setSi(function(i) { return Math.min(i + 1, ASTATS.length - 1); });
     }, 2000);
-
+ 
     fetch("https://ulfrjsufztnnvrmltaph.supabase.co/functions/v1/smart-worker", {
       method: "POST",
       headers: {
@@ -679,10 +692,10 @@ function ScreenAnalyse(props) {
       clearInterval(iv);
       props.onError();
     });
-
+ 
     return function() { clearInterval(iv); };
   }, []);
-
+ 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#fafafa"}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:24,padding:"36px 24px"}}>
@@ -706,7 +719,7 @@ function ScreenAnalyse(props) {
     </div>
   );
 }
-
+ 
 // ── FICHE ────────────────────────────────────────────────────────
 function ScreenFiche(props) {
   var mat = getMat(props.matiere);
@@ -741,7 +754,7 @@ function ScreenFiche(props) {
     </div>
   );
 }
-
+ 
 // ── QUIZ ─────────────────────────────────────────────────────────
 function ScreenQuiz(props) {
   var [idx, setIdx] = useState(0);
@@ -752,14 +765,14 @@ function ScreenQuiz(props) {
   var mat = getMat(props.matiere);
   var col = mat ? mat.c : PINK2;
   var tot = questions.length;
-
+ 
   function handleSelect(i) {
     if (sel !== -1) return;
     var ok = i === q.reponse;
     setSel(i);
     if (ok) setScore(function(s) { return s + 1; });
   }
-
+ 
   function handleNext() {
     var finalScore = sel === q.reponse ? score : score;
     if (idx === tot - 1) {
@@ -769,7 +782,7 @@ function ScreenQuiz(props) {
       setSel(-1);
     }
   }
-
+ 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column"}}>
       <div className="rz-pw">
@@ -818,7 +831,7 @@ function ScreenQuiz(props) {
     </div>
   );
 }
-
+ 
 // ── VICTOIRE ─────────────────────────────────────────────────────
 function ScreenVictoire(props) {
   var tot = props.total || 5;
@@ -865,11 +878,11 @@ function ScreenVictoire(props) {
     </div>
   );
 }
-
+ 
 // ── APP ──────────────────────────────────────────────────────────
 export default function RevizzApp() {
   useEffect(function() { injectCSS(); }, []);
-
+ 
   var [profils, setProfils] = useState([]);
   var [loading, setLoading] = useState(true);
   var [step, setStep] = useState("splash");
@@ -879,7 +892,7 @@ export default function RevizzApp() {
   var [score, setScore] = useState(0);
   var [selectedUnite, setSelectedUnite] = useState(null);
   var editingNew = useRef(false);
-
+ 
   // Charger les profils depuis Supabase au démarrage
   useEffect(function() {
     loadProfils().then(function(data) {
@@ -887,29 +900,29 @@ export default function RevizzApp() {
       setLoading(false);
     });
   }, []);
-
+ 
   function handleSelect(i) {
     var p = profils[i];
     setCur({prenom:p.prenom, niveau:p.niveau, matiere:p.matiere, id:p.id});
     setStep("home");
   }
-
+ 
   function handleAdd() {
     editingNew.current = true;
     setCur({prenom:"", niveau:"", matiere:"", id:null});
     setStep("prenom");
   }
-
+ 
   function handlePrenom(p) {
     setCur(function(c) { return {prenom:p, niveau:c.niveau, matiere:c.matiere, id:c.id}; });
     setStep("niveau");
   }
-
+ 
   function handleNiveau(n) {
     setCur(function(c) { return {prenom:c.prenom, niveau:n, matiere:c.matiere, id:c.id}; });
     setStep("bienvenue");
   }
-
+ 
   function handleMatiere(m) {
     if (editingNew.current) {
       createProfil(cur.prenom, cur.niveau, m).then(function(newP) {
@@ -932,7 +945,7 @@ export default function RevizzApp() {
       setStep("home");
     }
   }
-
+ 
   function handleVictoire(s) {
     setScore(s);
     if (cur.id && contenu) {
@@ -940,7 +953,7 @@ export default function RevizzApp() {
     }
     setStep("victoire");
   }
-
+ 
   if (loading) {
     return (
       <div className="rz-wrap" style={{alignItems:"center",justifyContent:"center",background:"linear-gradient(145deg,#1c2260,#0f1438)"}}>
@@ -954,7 +967,7 @@ export default function RevizzApp() {
       </div>
     );
   }
-
+ 
   var screens = {
     splash: (
       <ScreenSplash onDone={function() { setStep("profils"); }} />
@@ -1027,7 +1040,7 @@ export default function RevizzApp() {
       />
     ),
   };
-
+ 
   return (
     <div className="rz-wrap">
       {screens[step] || screens["home"]}
