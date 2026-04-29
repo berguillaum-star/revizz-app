@@ -1193,28 +1193,29 @@ export default function RevizzApp() {
         onFichesPredef={function() { setStep("fichesPredef"); }}
         onMesFiches={function() { setStep("mesFiches"); }}
       />
-    ),
-    mesFiches: (
-      <ScreenMesFiches
-        prenom={cur.prenom}
-        profilId={cur.id}
-        onBack={function() { setStep("home"); }}
-        onSelect={function(f) {
-          setContenu({
-            titre: f.titre,
-            resume: f.resume,
-            points_cles: f.points_cles,
-            questions: f.questions
-          });
-          setStep("fiche");
-        }}
-      />
-    ), (
-      <ScreenFichesPredef
-        onBack={function() { setStep("home"); }}
-        onSelect={function(u) { setSelectedUnite(u); setContenu(u); setStep("fiche"); }}
-      />
-    ),
+      ),
+      mesFiches: (
+        <ScreenMesFiches
+          prenom={cur.prenom}
+          profilId={cur.id}
+          onBack={function() { setStep("home"); }}
+          onSelect={function(f) {
+            setContenu({
+              titre: f.titre,
+              resume: f.resume,
+              points_cles: f.points_cles,
+              questions: f.questions
+            });
+            setStep("fiche");
+          }}
+        />
+      ),
+      fichesPredef: (
+        <ScreenFichesPredef
+          onBack={function() { setStep("home"); }}
+          onSelect={function(u) { setSelectedUnite(u); setContenu(u); setStep("fiche"); }}
+        />
+      ),
     scan: (
       <ScreenScan
         prenom={cur.prenom} matiere={cur.matiere} niveau={cur.niveau}
