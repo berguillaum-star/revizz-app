@@ -1088,6 +1088,11 @@ export default function RevizzApp() {
           setStep("fiche");
         }}
       />
+      setStep("fiche");
+        }}
+      />
+    ),
+    fichesPredef: (
       <ScreenFichesPredef
         onBack={function() { setStep("home"); }}
         onSelect={function(u) { setSelectedUnite(u); setContenu(u); setStep("fiche"); }}
